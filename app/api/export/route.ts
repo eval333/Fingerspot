@@ -11,6 +11,10 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient();
 
+    if (!supabase) {
+      return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
+    }
+
     let query;
     let filename;
 
