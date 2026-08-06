@@ -3,8 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Clock, Terminal, Webhook } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const supabase = await createClient();
+
+  if (!supabase) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Configure environment variables to use the dashboard</p>
+        </div>
+      </div>
+    );
+  }
 
   const [attlogsRes, userinfosRes, commandLogsRes, webhookLogsRes] = await Promise.all([
     supabase.from("attlogs").select("*", { count: "exact", head: true }),
@@ -76,7 +89,7 @@ export default async function DashboardPage() {
                 <Badge variant="secondary">Fingerprint</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm">S129000853</span>
+                <span className="text-sm">S129000358</span>
                 <Badge variant="secondary">Face</Badge>
               </div>
             </div>

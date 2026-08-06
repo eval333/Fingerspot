@@ -1,22 +1,22 @@
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createClient();
 
+  if (supabase) {
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       redirect("/login");
     }
-  } catch {
-    redirect("/login");
   }
 
   return (
