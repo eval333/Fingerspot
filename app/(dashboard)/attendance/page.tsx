@@ -52,6 +52,23 @@ export default function AttendancePage() {
     setLoading(false);
   };
 
+  const syncFromDevice = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/sync-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cloud_id: cloudId, start_date: startDate, end_date: endDate }),
+      });
+      const data = await res.json();
+      if (data.message) alert(data.message);
+      await fetchLogs();
+    } catch (error) {
+      console.error("Failed to sync:", error);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     let cancelled = false;
     const loadLocalLogs = async () => {
@@ -107,7 +124,7 @@ export default function AttendancePage() {
               <label className="text-sm font-medium">End Date</label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
-            <Button onClick={fetchLogs} disabled={loading}>
+            <Button onClick={syncFromDevice} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
               Sync from Device
             </Button>
