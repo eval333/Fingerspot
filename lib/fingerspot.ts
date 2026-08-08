@@ -159,12 +159,10 @@ export const FingerspotService = {
 export const DEVICES = [
   {
     cloud_id: "C2696422DF2F3337",
-    type: "Fingerprint",
     api_key: "NKBQCCI1SALC9947",
   },
   {
-    cloud_id: "S129000358",
-    type: "Face",
+    cloud_id: "S129000853",
     api_key: "NKBQCCI1SALC9947",
   },
 ];

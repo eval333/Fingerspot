@@ -230,9 +230,8 @@ export default function DocsPage() {
                 <h3 className="font-semibold mb-2">Registered Devices</h3>
                 <div className="space-y-2">
                   {DEVICES.map((d) => (
-                    <div key={d.cloud_id} className="flex items-center justify-between border rounded-lg p-3">
+                    <div key={d.cloud_id} className="flex items-center border rounded-lg p-3">
                       <span className="font-mono text-sm">{d.cloud_id}</span>
-                      <Badge variant="secondary">{d.type}</Badge>
                     </div>
                   ))}
                 </div>

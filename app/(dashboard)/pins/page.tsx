@@ -74,7 +74,7 @@ export default function PinsPage() {
               <Select value={cloudId} onChange={(e) => setCloudId(e.target.value)}>
                 {DEVICES.map((d) => (
                   <option key={d.cloud_id} value={d.cloud_id}>
-                    {d.cloud_id} ({d.type})
+                    {d.cloud_id}
                   </option>
                 ))}
               </Select>
