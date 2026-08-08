@@ -26,17 +26,22 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(false);
   const [cloudId, setCloudId] = useState(DEVICES[0].cloud_id);
 
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/sync-users?cloud_id=${cloudId}`);
-      const data = await res.json();
-      if (data.users) setUsers(data.users);
-    } catch (error) {
-      console.error("Failed to load users:", error);
-    }
-    setLoading(false);
-  };
+  useEffect(() => {
+    let cancelled = false;
+    const loadUsers = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/sync-users?cloud_id=${cloudId}`);
+        const data = await res.json();
+        if (!cancelled && data.users) setUsers(data.users);
+      } catch (error) {
+        console.error("Failed to load users:", error);
+      }
+      if (!cancelled) setLoading(false);
+    };
+    loadUsers();
+    return () => { cancelled = true; };
+  }, [cloudId]);
 
   const syncFromDevice = async () => {
     setLoading(true);
@@ -48,16 +53,11 @@ export default function UsersPage() {
       });
       const data = await res.json();
       if (data.message) alert(data.message);
-      await loadUsers();
     } catch (error) {
       console.error("Failed to sync users:", error);
     }
     setLoading(false);
   };
-
-  useEffect(() => {
-    loadUsers();
-  }, [cloudId]);
 
   const handleDelete = async (pin: string) => {
     if (!confirm(`Delete user with PIN ${pin}?`)) return;
@@ -67,7 +67,6 @@ export default function UsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cloud_id: cloudId, pin }),
       });
-      await loadUsers();
     } catch (error) {
       console.error("Failed to delete user:", error);
     }

@@ -23,17 +23,22 @@ export default function PinsPage() {
   const [loading, setLoading] = useState(false);
   const [cloudId, setCloudId] = useState(DEVICES[0].cloud_id);
 
-  const loadPins = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/sync-pins?cloud_id=${cloudId}`);
-      const data = await res.json();
-      if (data.pins) setPins(data.pins);
-    } catch (error) {
-      console.error("Failed to load pins:", error);
-    }
-    setLoading(false);
-  };
+  useEffect(() => {
+    let cancelled = false;
+    const loadPins = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/sync-pins?cloud_id=${cloudId}`);
+        const data = await res.json();
+        if (!cancelled && data.pins) setPins(data.pins);
+      } catch (error) {
+        console.error("Failed to load pins:", error);
+      }
+      if (!cancelled) setLoading(false);
+    };
+    loadPins();
+    return () => { cancelled = true; };
+  }, [cloudId]);
 
   const syncFromDevice = async () => {
     setLoading(true);
@@ -45,16 +50,11 @@ export default function PinsPage() {
       });
       const data = await res.json();
       if (data.message) alert(data.message);
-      await loadPins();
     } catch (error) {
       console.error("Failed to sync pins:", error);
     }
     setLoading(false);
   };
-
-  useEffect(() => {
-    loadPins();
-  }, [cloudId]);
 
   return (
     <div className="space-y-6">

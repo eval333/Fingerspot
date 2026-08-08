@@ -42,7 +42,22 @@ export default function ApiRequestsPage() {
   };
 
   useEffect(() => {
-    loadRequests();
+    let cancelled = false;
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (cloudId !== "all") params.set("cloud_id", cloudId);
+        const res = await fetch(`/api/api-requests?${params}`);
+        const data = await res.json();
+        if (!cancelled && data.requests) setRequests(data.requests);
+      } catch (error) {
+        console.error("Failed to load requests:", error);
+      }
+      if (!cancelled) setLoading(false);
+    };
+    fetchData();
+    return () => { cancelled = true; };
   }, [cloudId]);
 
   return (

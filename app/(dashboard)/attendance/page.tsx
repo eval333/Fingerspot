@@ -22,14 +22,22 @@ interface Attlog {
   created_at: string;
 }
 
+function getDefaultDates() {
+  const now = new Date();
+  const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+  return {
+    startDate: twoDaysAgo.toISOString().split("T")[0],
+    endDate: now.toISOString().split("T")[0],
+  };
+}
+
 export default function AttendancePage() {
   const [logs, setLogs] = useState<Attlog[]>([]);
   const [loading, setLoading] = useState(false);
   const [cloudId, setCloudId] = useState(DEVICES[0].cloud_id);
-  const [startDate, setStartDate] = useState(
-    new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-  );
-  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  const [dates] = useState(getDefaultDates);
+  const [startDate, setStartDate] = useState(dates.startDate);
+  const [endDate, setEndDate] = useState(dates.endDate);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -44,21 +52,23 @@ export default function AttendancePage() {
     setLoading(false);
   };
 
-  const loadLocalLogs = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ cloud_id: cloudId });
-      const res = await fetch(`/api/sync-logs?${params}`);
-      const data = await res.json();
-      if (data.logs) setLogs(data.logs);
-    } catch (error) {
-      console.error("Failed to load logs:", error);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
+    let cancelled = false;
+    const loadLocalLogs = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({ cloud_id: cloudId });
+        const res = await fetch(`/api/sync-logs?${params}`);
+        const data = await res.json();
+        if (!cancelled && data.logs) setLogs(data.logs);
+      } catch (error) {
+        console.error("Failed to load logs:", error);
+      }
+      if (!cancelled) setLoading(false);
+    };
     loadLocalLogs();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleExport = () => {

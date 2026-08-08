@@ -1,0 +1,82 @@
+erDiagram
+    attlogs {
+        uuid id PK
+        text device_sn
+        text pin
+        timestamptz datetime
+        int verified
+        int mode
+        int status_scan
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    userinfos {
+        uuid id PK
+        text device_sn
+        text pin
+        text name
+        text card
+        text password
+        text finger
+        text face
+        text vein
+        text template
+        int privilege
+        text department
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    pins {
+        uuid id PK
+        text device_sn
+        text pin
+        text name
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    api_requests {
+        uuid id PK
+        text device_sn
+        text endpoint
+        text method
+        jsonb request_payload
+        jsonb response_payload
+        int response_code
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    webhook_logs {
+        uuid id PK
+        text device_sn
+        text event
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    command_logs {
+        uuid id PK
+        text device_sn
+        text trans_id
+        text command
+        jsonb request_payload
+        jsonb response_payload
+        int response_code
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }

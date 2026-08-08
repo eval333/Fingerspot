@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,48 +22,55 @@ interface CommandLog {
   created_at: string;
 }
 
-const today = new Date().toISOString().split("T")[0];
-const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
-
-const DEFAULT_PARAMS: Record<string, string> = {
-  get_attlog: JSON.stringify({ start_date: twoDaysAgo, end_date: today }, null, 2),
-  get_device: JSON.stringify({}, null, 2),
-  get_userinfo: JSON.stringify({ pin: "1" }, null, 2),
-  set_userinfo: JSON.stringify({ pin: "1", name: "Nama Karyawan", privilege: "0", rfid: "", password: "", finger: "", face: "", vein: "" }, null, 2),
-  delete_userinfo: JSON.stringify({ pin: "1" }, null, 2),
-  get_all_pin: JSON.stringify({}, null, 2),
-  set_time: JSON.stringify({}, null, 2),
-  restart_device: JSON.stringify({}, null, 2),
-  reg_online: JSON.stringify({ pin: "1" }, null, 2),
-};
-
 export default function CommandsPage() {
   const [cloudId, setCloudId] = useState(DEVICES[0].cloud_id);
   const [command, setCommand] = useState("get_attlog");
-  const [params, setParams] = useState(DEFAULT_PARAMS["get_attlog"]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CommandLog | null>(null);
   const [logs, setLogs] = useState<CommandLog[]>([]);
 
   const selectedCommand = COMMANDS.find((c) => c.command === command);
 
-  useEffect(() => {
-    setParams(DEFAULT_PARAMS[command] || "{}");
-  }, [command]);
-
-  useEffect(() => {
-    fetchLogs();
+  const defaultParams = useMemo(() => {
+    const d = new Date();
+    const twoDaysAgo = new Date(d.getTime() - 2 * 86400000);
+    const today = d.toISOString().split("T")[0];
+    const startDate = twoDaysAgo.toISOString().split("T")[0];
+    const params: Record<string, string> = {
+      get_attlog: JSON.stringify({ start_date: startDate, end_date: today }, null, 2),
+      get_device: JSON.stringify({}, null, 2),
+      get_userinfo: JSON.stringify({ pin: "1" }, null, 2),
+      set_userinfo: JSON.stringify({ pin: "1", name: "Nama Karyawan", privilege: "0", rfid: "", password: "", finger: "", face: "", vein: "" }, null, 2),
+      delete_userinfo: JSON.stringify({ pin: "1" }, null, 2),
+      get_all_pin: JSON.stringify({}, null, 2),
+      set_time: JSON.stringify({}, null, 2),
+      restart_device: JSON.stringify({}, null, 2),
+      reg_online: JSON.stringify({ pin: "1" }, null, 2),
+    };
+    return params;
   }, []);
 
-  const fetchLogs = async () => {
-    try {
-      const res = await fetch("/api/commands");
-      const data = await res.json();
-      if (data.logs) setLogs(data.logs);
-    } catch (error) {
-      console.error("Failed to fetch logs:", error);
-    }
-  };
+  const [params, setParams] = useState(() => defaultParams["get_attlog"]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setParams(defaultParams[command] || "{}");
+  }, [command, defaultParams]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchLogs = async () => {
+      try {
+        const res = await fetch("/api/commands");
+        const data = await res.json();
+        if (!cancelled && data.logs) setLogs(data.logs);
+      } catch (error) {
+        console.error("Failed to fetch logs:", error);
+      }
+    };
+    fetchLogs();
+    return () => { cancelled = true; };
+  }, []);
 
   const executeCommand = async () => {
     setLoading(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +21,9 @@ export default function WebhooksPage() {
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedLog, setSelectedLog] = useState<WebhookLog | null>(null);
-  const [webhookUrl, setWebhookUrl] = useState("");
+  const [origin, setOrigin] = useState("");
+
+  const webhookUrl = useMemo(() => origin ? `${origin}/api/webhook` : "", [origin]);
 
   const loadLogs = async () => {
     setLoading(true);
@@ -36,8 +38,22 @@ export default function WebhooksPage() {
   };
 
   useEffect(() => {
-    loadLogs();
-    setWebhookUrl(`${window.location.origin}/api/webhook`);
+    let cancelled = false;
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/webhook/logs");
+        const data = await res.json();
+        if (!cancelled && data.logs) setLogs(data.logs);
+      } catch (error) {
+        console.error("Failed to load webhook logs:", error);
+      }
+      if (!cancelled) setLoading(false);
+    };
+    fetchData();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (typeof window !== "undefined") setOrigin(window.location.origin);
+    return () => { cancelled = true; };
   }, []);
 
   const getStatusColor = (status: string | null) => {

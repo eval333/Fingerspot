@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERD - Fingerspot Database</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Entity Relationship Diagram (ERD)</h1>
+        <h2>Fingerspot Biometric Attendance Database</h2>
+        <div class="mermaid">
+erDiagram
+    attlogs {
+        uuid id PK
+        text device_sn
+        text pin
+        timestamptz datetime
+        int verified
+        int mode
+        int status_scan
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    userinfos {
+        uuid id PK
+        text device_sn
+        text pin
+        text name
+        text card
+        text password
+        text finger
+        text face
+        text vein
+        text template
+        int privilege
+        text department
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    pins {
+        uuid id PK
+        text device_sn
+        text pin
+        text name
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    api_requests {
+        uuid id PK
+        text device_sn
+        text endpoint
+        text method
+        jsonb request_payload
+        jsonb response_payload
+        int response_code
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    webhook_logs {
+        uuid id PK
+        text device_sn
+        text event
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    command_logs {
+        uuid id PK
+        text device_sn
+        text trans_id
+        text command
+        jsonb request_payload
+        jsonb response_payload
+        int response_code
+        text status
+        jsonb raw_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+        </div>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+</html>
