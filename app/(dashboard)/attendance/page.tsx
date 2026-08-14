@@ -34,14 +34,12 @@ function formatDeviceTime(log: Attlog): string {
     }
   }
   if (log.datetime) {
-    const d = new Date(log.datetime + "+07:00");
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    const hours = String(d.getHours()).padStart(2, "0");
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-    const seconds = String(d.getSeconds()).padStart(2, "0");
-    return `${day}/${month}/${year}, ${hours}.${minutes}.${seconds}`;
+    const dt = log.datetime.replace("+00:00", "").replace("Z", "");
+    const [datePart, timePart] = dt.split("T") ? dt.split("T") : dt.split(" ");
+    if (datePart && timePart) {
+      const [y, m, d] = datePart.split("-");
+      return `${d}/${m}/${y}, ${timePart.substring(0, 5).replace(":", ".")}`;
+    }
   }
   return "-";
 }
