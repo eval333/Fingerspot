@@ -29,28 +29,6 @@ export default function DocsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="font-semibold mb-2">Architecture</h3>
-                <pre className="rounded-md bg-muted p-4 text-sm overflow-auto">
-{`┌─────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Browser   │────▶│  Next.js App     │────▶│  Fingerspot API │
-│  (Dashboard)│     │  (Vercel)        │     │  (Cloud)        │
-└─────────────┘     └──────────────────┘     └─────────────────┘
-                           │     ▲
-                           │     │
-                           ▼     │
-                    ┌──────────────────┐
-                    │  Supabase        │
-                    │  (PostgreSQL)    │
-                    └──────────────────┘
-                           ▲     │
-                           │     │
-                    ┌──────────────────┐
-                    │  Fingerspot      │
-                    │  Device (Webhook)│
-                    └──────────────────┘`}
-                </pre>
-              </div>
-              <div>
                 <h3 className="font-semibold mb-2">API Info</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div><strong>Base URL:</strong> https://developer.fingerspot.io</div>
