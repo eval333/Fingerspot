@@ -85,12 +85,14 @@ export async function POST(request: NextRequest) {
     for (const log of logs) {
       if (!log || !log.pin || !log.scan) continue;
 
+      const normalizedDatetime = log.scan.replace(" ", "T") + (log.scan.includes("Z") || log.scan.includes("+") ? "" : "+00:00");
+
       const { data: existing } = await admin
         .from("attlogs")
         .select("id")
         .eq("device_sn", cloud_id)
         .eq("pin", log.pin)
-        .eq("datetime", log.scan)
+        .eq("datetime", normalizedDatetime)
         .limit(1);
 
       if (existing && existing.length > 0) continue;

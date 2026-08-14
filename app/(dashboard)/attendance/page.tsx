@@ -65,15 +65,11 @@ export default function AttendancePage() {
       });
       const data = await res.json();
 
-      if (data.success && data.logs && data.logs.length > 0) {
-        setLogs((prev) => {
-          const existingIds = new Set(prev.map((l) => l.id));
-          const newLogs = data.logs.filter((l: Attlog) => !existingIds.has(l.id));
-          return [...newLogs, ...prev];
-        });
-        setSyncResult(`${data.count} new record(s) synced from device`);
+      if (data.success) {
+        setSyncResult(data.message || "Sync completed");
+        await fetchLogs();
       } else {
-        setSyncResult(data.message || "No new records");
+        setSyncResult(data.message || "Sync failed");
       }
     } catch (error) {
       console.error("Failed to sync:", error);
@@ -87,7 +83,7 @@ export default function AttendancePage() {
     const loadLocalLogs = async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({ cloud_id: cloudId });
+        const params = new URLSearchParams({ cloud_id: cloudId, start_date: startDate, end_date: endDate });
         const res = await fetch(`/api/sync-logs?${params}`);
         const data = await res.json();
         if (!cancelled && data.logs) setLogs(data.logs);
@@ -98,8 +94,7 @@ export default function AttendancePage() {
     };
     loadLocalLogs();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [cloudId, startDate, endDate]);
 
   const handleExport = () => {
     const params = new URLSearchParams({ cloud_id: cloudId, start_date: startDate, end_date: endDate });
