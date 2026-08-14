@@ -34,10 +34,12 @@ function getDefaultDates() {
 export default function AttendancePage() {
   const [logs, setLogs] = useState<Attlog[]>([]);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [cloudId, setCloudId] = useState(DEVICES[0].cloud_id);
   const [dates] = useState(getDefaultDates);
   const [startDate, setStartDate] = useState(dates.startDate);
   const [endDate, setEndDate] = useState(dates.endDate);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -53,7 +55,8 @@ export default function AttendancePage() {
   };
 
   const syncFromDevice = async () => {
-    setLoading(true);
+    setSyncing(true);
+    setSyncResult(null);
     try {
       const res = await fetch("/api/sync-logs", {
         method: "POST",
@@ -61,12 +64,22 @@ export default function AttendancePage() {
         body: JSON.stringify({ cloud_id: cloudId, start_date: startDate, end_date: endDate }),
       });
       const data = await res.json();
-      if (data.message) alert(data.message);
-      await fetchLogs();
+
+      if (data.success && data.logs && data.logs.length > 0) {
+        setLogs((prev) => {
+          const existingIds = new Set(prev.map((l) => l.id));
+          const newLogs = data.logs.filter((l: Attlog) => !existingIds.has(l.id));
+          return [...newLogs, ...prev];
+        });
+        setSyncResult(`${data.count} new record(s) synced from device`);
+      } else {
+        setSyncResult(data.message || "No new records");
+      }
     } catch (error) {
       console.error("Failed to sync:", error);
+      setSyncResult("Sync failed. Please try again.");
     }
-    setLoading(false);
+    setSyncing(false);
   };
 
   useEffect(() => {
@@ -124,15 +137,20 @@ export default function AttendancePage() {
               <label className="text-sm font-medium">End Date</label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
-            <Button onClick={syncFromDevice} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-              Sync from Device
+            <Button onClick={syncFromDevice} disabled={syncing || loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Syncing..." : "Sync from Device"}
             </Button>
             <Button variant="outline" onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
           </div>
+          {syncResult && (
+            <div className="mt-3 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+              {syncResult}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -155,7 +173,7 @@ export default function AttendancePage() {
               {logs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No records found
+                    {loading ? "Loading..." : "No records found. Click Sync from Device to pull data."}
                   </TableCell>
                 </TableRow>
               ) : (

@@ -24,27 +24,29 @@ interface UserInfo {
 export default function UsersPage() {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [cloudId, setCloudId] = useState(DEVICES[0].cloud_id);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/sync-users?cloud_id=${cloudId}`);
+      const data = await res.json();
+      if (data.users) setUsers(data.users);
+    } catch (error) {
+      console.error("Failed to load users:", error);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    let cancelled = false;
-    const loadUsers = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/sync-users?cloud_id=${cloudId}`);
-        const data = await res.json();
-        if (!cancelled && data.users) setUsers(data.users);
-      } catch (error) {
-        console.error("Failed to load users:", error);
-      }
-      if (!cancelled) setLoading(false);
-    };
     loadUsers();
-    return () => { cancelled = true; };
   }, [cloudId]);
 
   const syncFromDevice = async () => {
-    setLoading(true);
+    setSyncing(true);
+    setSyncResult(null);
     try {
       const res = await fetch("/api/sync-users", {
         method: "POST",
@@ -52,11 +54,17 @@ export default function UsersPage() {
         body: JSON.stringify({ cloud_id: cloudId }),
       });
       const data = await res.json();
-      if (data.message) alert(data.message);
+      if (data.success) {
+        setSyncResult("Sync command sent. Data will appear via webhook in a few seconds.");
+        setTimeout(() => loadUsers(), 5000);
+      } else {
+        setSyncResult(data.message || "Sync command sent. Check webhook logs for results.");
+      }
     } catch (error) {
       console.error("Failed to sync users:", error);
+      setSyncResult("Sync failed. Please try again.");
     }
-    setLoading(false);
+    setSyncing(false);
   };
 
   const handleDelete = async (pin: string) => {
@@ -67,6 +75,7 @@ export default function UsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cloud_id: cloudId, pin }),
       });
+      await loadUsers();
     } catch (error) {
       console.error("Failed to delete user:", error);
     }
@@ -103,11 +112,20 @@ export default function UsersPage() {
                 ))}
               </Select>
             </div>
-            <Button onClick={syncFromDevice} disabled={loading}>
+            <Button onClick={syncFromDevice} disabled={syncing || loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Syncing..." : "Sync from Device"}
+            </Button>
+            <Button variant="outline" onClick={loadUsers} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-              Sync from Device
+              Refresh
             </Button>
           </div>
+          {syncResult && (
+            <div className="mt-3 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+              {syncResult}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -131,7 +149,7 @@ export default function UsersPage() {
               {users.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    No users found
+                    {loading ? "Loading..." : "No users found. Click Sync from Device to pull data."}
                   </TableCell>
                 </TableRow>
               ) : (

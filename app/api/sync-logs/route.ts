@@ -61,16 +61,41 @@ export async function POST(request: NextRequest) {
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.message || "Failed to sync from device" },
+        { error: result.message || "Failed to sync from device", success: false },
         { status: 500 }
       );
     }
 
     const admin = createAdminClient();
-    const logs = Array.isArray(result.data) ? result.data : [result.data];
+    const rawLogs = result.data;
+
+    if (!rawLogs || (Array.isArray(rawLogs) && rawLogs.length === 0)) {
+      return NextResponse.json({
+        success: true,
+        message: "No new records from device",
+        count: 0,
+        logs: [],
+      });
+    }
+
+    const logs = Array.isArray(rawLogs) ? rawLogs : [rawLogs];
+    let insertedCount = 0;
+    const insertedLogs: unknown[] = [];
 
     for (const log of logs) {
-      await admin.from("attlogs").insert({
+      if (!log || !log.pin || !log.scan) continue;
+
+      const { data: existing } = await admin
+        .from("attlogs")
+        .select("id")
+        .eq("device_sn", cloud_id)
+        .eq("pin", log.pin)
+        .eq("datetime", log.scan)
+        .limit(1);
+
+      if (existing && existing.length > 0) continue;
+
+      const { data: inserted } = await admin.from("attlogs").insert({
         device_sn: cloud_id,
         pin: log.pin,
         datetime: log.scan,
@@ -78,7 +103,12 @@ export async function POST(request: NextRequest) {
         status_scan: parseInt(log.status_scan) || 0,
         status: "success",
         raw_payload: log,
-      });
+      }).select().single();
+
+      if (inserted) {
+        insertedCount++;
+        insertedLogs.push(inserted);
+      }
     }
 
     await admin.from("api_requests").insert({
@@ -93,12 +123,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Synced ${logs.length} attendance records`,
-      count: logs.length,
+      message: `Synced ${insertedCount} new attendance records (${logs.length - insertedCount} duplicates skipped)`,
+      count: insertedCount,
+      logs: insertedLogs,
     });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal error" },
+      { error: error instanceof Error ? error.message : "Internal error", success: false },
       { status: 500 }
     );
   }
