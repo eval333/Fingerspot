@@ -19,7 +19,31 @@ interface Attlog {
   mode: number | null;
   status_scan: number | null;
   status: string | null;
+  raw_payload: { scan?: string } | null;
   created_at: string;
+}
+
+function formatDeviceTime(log: Attlog): string {
+  if (log.raw_payload?.scan) {
+    const scan = log.raw_payload.scan;
+    const parts = scan.split(" ");
+    if (parts.length === 2) {
+      const [date, time] = parts;
+      const [y, m, d] = date.split("-");
+      return `${d}/${m}/${y}, ${time.replace(/:\d{2}$/, "")}`;
+    }
+  }
+  if (log.datetime) {
+    const d = new Date(log.datetime + "+07:00");
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    const seconds = String(d.getSeconds()).padStart(2, "0");
+    return `${day}/${month}/${year}, ${hours}.${minutes}.${seconds}`;
+  }
+  return "-";
 }
 
 function getDefaultDates() {
@@ -177,7 +201,7 @@ export default function AttendancePage() {
                     <TableCell className="font-mono text-sm">{log.device_sn}</TableCell>
                     <TableCell>{log.pin}</TableCell>
                     <TableCell>
-                      {log.datetime ? new Date(log.datetime).toLocaleString("id-ID") : "-"}
+                      {formatDeviceTime(log)}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
